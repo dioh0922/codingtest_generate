@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>コーディングテスト練習</title>
+</head>
+<body>
+  <div>
+    <form action="/generate" method="post">
+      <div>
+        段階：<input type="number" name="level" value="1" step="1" min="1"/>
+      </div>
+      <div>
+        言語：
+        <select name="lang" id="lang">
+          <option value="PHP">PHP</option>
+          <option value="Python">Python</option>
+          <option value="JavaScript">JavaScript</option>
+          <option value="Java">Java</option>
+        </select>
+      </div>
+      <div>
+        <button type="submit">生成</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

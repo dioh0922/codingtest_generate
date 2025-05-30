@@ -8,13 +8,20 @@
 <body>
   <div>
     <div>
-      <textarea name="" id="">{{index . "q"}}</textarea>
+      <form action="/check" method="post">
+        <textarea name="question" id="" cols="60" rows="30" readonly>
+          {{index . "q"}}
+        </textarea>
+        <textarea name="input" id="" cols="60" rows="30" ></textarea>
+        <textarea name="" id="">
+          {{index . "a"}}
+        </textarea>
+        <input type="hidden" name="answer" value="{{index . "a"}}">
+        <div class="row">
+          <button type="submit">採点</button>
+        </div>
+      </form>
     </div>
-
-    <div>
-      <textarea name="" id="">{{index . "a"}}</textarea>
-    </div>
-
   </div>
 </body>
 </html>

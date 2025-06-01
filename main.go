@@ -47,7 +47,8 @@ func generateGemini(level string, lang string) string {
 	convLevel, err := strconv.Atoi(level)
 	parts := []string{
 		fmt.Sprintf("コーディングテストの模擬問題を作成してください。言語は%sを使用してください。難易度は最大10として%dの問題を作ってください。", lang, level),
-		"出力は以下のjsonを1行の文字列としてください{\"q\", \"{作成した問題内容}\", \"a\":\"作成した際の回答例\", \"opt\": \"{ほかに負荷情報がある場合}\"}",
+		"出力の形式例は以下と同じ形式のJSON文字列のみの1行の文字列としてであること：",
+		`{"q": "作成した問題内容", "a": "作成した際の回答例", "opt": "ほかに負荷情報がある場合"}`,		
 		"ただし、出力の全てにおいてMarkdownのコードブロックやいかなる装飾も絶対に使用しないで改行コードと$はそのままでプレーンテキストでください。",
 		"```から始まる装飾は絶対に禁止です。",
 	}
@@ -113,7 +114,7 @@ func checkAnswer(q string, a string, input string) string {
 		fmt.Sprintf("{\"question\":\"%s\", \"answer\":\"%s\", \"input\":\"%s\"}", q, a, input),
 		"出力は{\"summary\":\"{概要}\", \"point\":\"{点数}\", \"detail\":\"{詳細の内容}\"}のjson形式にしてください。プレーンテキストでください。",
 		"全ての出力内容についてMarkdownのコードブロックやいかなる装飾も一切使用することは絶対に禁止です。",
-	}
+		}
 	prompt := strings.Join(parts, "\n")
 	result := geminiCall(prompt)
 	return result

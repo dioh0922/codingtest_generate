@@ -11,6 +11,8 @@ import (
 	"os"
 	"encoding/json"
 	"strings"
+	"errors"
+	"time"
 )
 
 func handler(w http.ResponseWriter, r *http.Request){
@@ -33,6 +35,7 @@ func generateHandler(w http.ResponseWriter, r *http.Request){
 		err := json.Unmarshal([]byte(result), &response)
 		if err != nil{
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		tmpl := template.Must(template.ParseFiles("template/generate.html"))
 
@@ -53,16 +56,19 @@ func generateGemini(level string, lang string) string {
 		"```から始まる装飾は絶対に禁止です。",
 	}
 	prompt := strings.Join(parts, "\n")
-	result := geminiCall(prompt)
+	result, generateErr := geminiCall(prompt)
 	if err != nil{
 		fmt.Println(err)
 		result = "failed"
+	}
+	if generateErr != nil{
+		result = generateErr.Error() + level + "/" + lang
 	}
 	fmt.Println(convLevel, lang)
 	return result
 }
 
-func geminiCall(prompt string) string {
+func geminiGenerateText(prompt string) string {
 	err := godotenv.Load()
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, &genai.ClientConfig{
@@ -81,9 +87,26 @@ func geminiCall(prompt string) string {
 	)
 	if err != nil{
 		fmt.Println(err)
+		return err.Error()
 	}
 	fmt.Println("res:", result.Text())
 	return result.Text()
+
+}
+
+func geminiCall(prompt string) (string, error) {
+	result := ""
+	for i := 0; i < 3; i++{
+		result = geminiGenerateText(prompt)
+		if !strings.HasPrefix(result, "`"){
+			break
+		} else if i == 2{
+			return "", errors.New("生成に失敗しました。")
+		}
+		time.Sleep(2 * time.Second)
+	}
+
+	return result, nil
 }
 
 func checkHandler(w http.ResponseWriter, r *http.Request){
@@ -92,12 +115,18 @@ func checkHandler(w http.ResponseWriter, r *http.Request){
 		q := r.FormValue("question")
 		a := r.FormValue("answer")
 		input := r.FormValue("input")
-		result := checkAnswer(q, a, input)
-
+		result, generateErr := checkAnswer(q, a, input)
+		if generateErr != nil{
+			fmt.Println(generateErr)
+			http.Error(w, generateErr.Error(), http.StatusInternalServerError)
+			return
+		}
 		var response map[string]interface{}
 		err := json.Unmarshal([]byte(result), &response)
 		if err != nil{
+			fmt.Println(err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
 		tmpl := template.Must(template.ParseFiles("template/check.html"))
 
@@ -108,7 +137,7 @@ func checkHandler(w http.ResponseWriter, r *http.Request){
 	}
 }
 
-func checkAnswer(q string, a string, input string) string {
+func checkAnswer(q string, a string, input string) (string, error) {
 	parts := []string{
 		"以下はコーディングテストの問題と解答内容からなるjsonです。\nquestionは問題文であり、inputは解答内容です。これとanswerで渡される模範解答と比較して100点満点で採点してください。",
 		fmt.Sprintf("{\"question\":\"%s\", \"answer\":\"%s\", \"input\":\"%s\"}", q, a, input),
@@ -116,8 +145,7 @@ func checkAnswer(q string, a string, input string) string {
 		"全ての出力内容についてMarkdownのコードブロックやいかなる装飾も一切使用することは絶対に禁止です。",
 		}
 	prompt := strings.Join(parts, "\n")
-	result := geminiCall(prompt)
-	return result
+	return geminiCall(prompt)
 }
 
 func main(){

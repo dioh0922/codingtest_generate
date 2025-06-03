@@ -37,6 +37,7 @@ func generateHandler(w http.ResponseWriter, r *http.Request){
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		response["start"] = time.Now().Format("2006/01/02 15:04:05")
 		tmpl := template.Must(template.ParseFiles("template/generate.html"))
 
 		tmpl.Execute(w, response)
@@ -114,6 +115,7 @@ func checkHandler(w http.ResponseWriter, r *http.Request){
 		r.ParseForm()
 		q := r.FormValue("question")
 		a := r.FormValue("answer")
+		start := r.FormValue("start")
 		input := r.FormValue("input")
 		result, generateErr := checkAnswer(q, a, input)
 		if generateErr != nil{
@@ -128,6 +130,13 @@ func checkHandler(w http.ResponseWriter, r *http.Request){
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		parsedTime, timeErr := time.Parse("2006/01/02 15:04:05", start)
+		if timeErr != nil{
+			fmt.Println(timeErr)
+			http.Error(w, timeErr.Error(), http.StatusInternalServerError)
+			return
+		}
+		response["duration"] = fmt.Sprintf("%.0f", time.Now().UTC().Sub(parsedTime).Minutes())
 		tmpl := template.Must(template.ParseFiles("template/check.html"))
 
 		tmpl.Execute(w, response)
